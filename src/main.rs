@@ -88,7 +88,7 @@ async fn create_blog_post(connection: Db, blog_post: Json<BlogPost>) -> Json<Blo
 }
 
 #[delete("/<id>")]
-async fn delete(connection: Db, id: i32) -> Result<Option<()>> {
+async fn delete_blog_post(connection: Db, id: i32) -> Result<Option<()>> {
     let res = connection
         .run(move |c| {
             diesel::delete(blog_posts::table)
@@ -106,13 +106,17 @@ fn get_config(config: &State<Config>) -> String {
 }
 
 #[put("/blog-post/<id>", data = "<blog_post>")]
-async fn update_blog_post<T>(connection: Db, id: i32, blog_post: Json<BlogPost>) -> QueryResult<T> {
-    diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
-        .set((
-            blog_posts::title.eq(blog_post.title),
-            blog_posts::body.eq(blog_post.body),
-        ))
-        .get_result(&connection)
+async fn update_blog_post(connection: Db, id: i32, blog_post: Json<BlogPost>) -> Result<()> {
+    connection
+        .run(move |c| {
+            diesel::update(blog_posts::table.filter(blog_posts::id.eq(id)))
+                .set((
+                    blog_posts::title.eq(&blog_post.title),
+                    blog_posts::body.eq(&blog_post.body),
+                ))
+                .execute(c)
+        }).await?;
+    Ok(())
 }
 
 // Rocket Launch
@@ -129,5 +133,6 @@ fn rocket() -> _ {
             routes![get_random_blog_post, get_blog_post, get_all_blog_posts,],
         )
         .mount("/create", routes![create_blog_post])
-        .mount("/delete", routes![delete])
+        .mount("/delete", routes![delete_blog_post])
+        .mount("/update", routes![update_blog_post])
 }
