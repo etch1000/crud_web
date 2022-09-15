@@ -5,9 +5,10 @@ extern crate rocket;
 extern crate diesel;
 
 // Importing functions and structs
-use diesel::{prelude::*, table, Insertable, PgConnection, Queryable};
+use diesel::{prelude::*, table, Insertable, Queryable};
 use rocket::{fairing::AdHoc, response::Debug, serde::json::Json, State};
 use rocket_sync_db_pools::database;
+use rocket_sync_db_pools::diesel::PgConnection;
 use serde::{Deserialize, Serialize};
 
 type Result<T, E = Debug<diesel::result::Error>> = std::result::Result<T, E>;
@@ -26,7 +27,7 @@ table! {
 pub struct Db(PgConnection);
 
 #[derive(Serialize, Deserialize, Clone, Queryable, Debug, Insertable)]
-#[table_name = "blog_posts"]
+#[diesel(table_name = blog_posts)]
 struct BlogPost {
     id: i32,
     title: String,
